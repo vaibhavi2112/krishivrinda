@@ -485,3 +485,81 @@
     height: 56px;
   }
 }
+/* ============================================
+   Mobile Optimizations
+   ============================================ */
+
+@media (max-width: 480px) {
+  .jarvis-fab {
+    bottom: calc(76px + env(safe-area-inset-bottom)) !important;
+    right: 16px !important;
+    width: 56px !important;
+    height: 56px !important;
+    font-size: 24px !important;
+  }
+
+  .jarvis-panel {
+    width: calc(100vw - 16px) !important;
+    height: calc(100vh - 100px) !important;
+    max-height: calc(100dvh - 100px) !important;
+    bottom: calc(76px + env(safe-area-inset-bottom)) !important;
+    right: 8px !important;
+    left: 8px !important;
+    border-radius: 20px !important;
+  }
+
+  .jarvis-header {
+    padding: 12px 14px !important;
+  }
+
+  .jarvis-title {
+    font-size: 15px !important;
+  }
+
+  .jarvis-avatar {
+    width: 36px !important;
+    height: 36px !important;
+    font-size: 20px !important;
+  }
+
+  .jarvis-body {
+    padding: 12px !important;
+    gap: 8px !important;
+  }
+
+  .jarvis-bubble {
+    max-width: 82% !important;
+    font-size: 14px !important;
+    padding: 9px 13px !important;
+  }
+
+  .jarvis-chip {
+    padding: 7px 12px !important;
+    font-size: 12px !important;
+  }
+
+  .jarvis-mic {
+    padding: 13px !important;
+    font-size: 14px !important;
+  }
+
+  .jarvis-text-toggle {
+    width: 46px !important;
+    font-size: 18px !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .jarvis-fab {
+    width: 52px !important;
+    height: 52px !important;
+  }
+
+  .jarvis-panel {
+    height: calc(100vh - 90px) !important;
+  }
+
+  .jarvis-bubble {
+    font-size: 13px !important;
+  }
+}

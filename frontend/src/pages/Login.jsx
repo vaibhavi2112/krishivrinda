@@ -10,7 +10,7 @@ export default function Login() {
   const [role, setRole] = useState('farmer');
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
-  const [devOtp, setDevOtp] = useState(''); // ⚠️ Development OTP दाखवण्यासाठी
+  const [devOtp, setDevOtp] = useState('');
 
   const sendOTP = async () => {
     if (!/^\+91[6-9]\d{9}$/.test(mobile)) {
@@ -21,11 +21,7 @@ export default function Login() {
     try {
       const { data } = await API.post('/auth/send-otp', { mobile });
       setStep(2);
-
-      // ⚠️ Dev mode मध्ये OTP दाखवा
-      if (data.otp) {
-        setDevOtp(data.otp);
-      }
+      if (data.otp) setDevOtp(data.otp);
     } catch (e) {
       alert(e.response?.data?.error || 'OTP पाठवता आला नाही');
     } finally {
@@ -41,7 +37,10 @@ export default function Login() {
     setLoading(true);
     try {
       const { data } = await API.post('/auth/verify-otp', {
-        mobile, otp, role, name
+        mobile,
+        otp,
+        role,
+        name
       });
       localStorage.setItem('kv_token', data.token);
       localStorage.setItem('kv_user', JSON.stringify(data.user));
@@ -53,9 +52,7 @@ export default function Login() {
     }
   };
 
-  const autoFillOTP = () => {
-    setOtp(devOtp);
-  };
+  const autoFillOTP = () => setOtp(devOtp);
 
   return (
     <div style={s.container}>
@@ -83,6 +80,8 @@ export default function Login() {
               value={mobile}
               placeholder="+91XXXXXXXXXX"
               onChange={(e) => setMobile(e.target.value)}
+              inputMode="numeric"
+              autoComplete="tel"
             />
 
             <label style={s.label}>तुम्ही कोण आहात?</label>
@@ -96,25 +95,32 @@ export default function Login() {
                   key={r.v}
                   style={
                     role === r.v
-                      ? { ...s.roleBtnActive, borderColor: r.color, background: `${r.color}15` }
+                      ? {
+                          ...s.roleBtnActive,
+                          borderColor: r.color,
+                          background: `${r.color}15`
+                        }
                       : s.roleBtn
                   }
                   onClick={() => setRole(r.v)}
                 >
-                  <span style={{ fontSize: 26 }}>{r.icon}</span>
-                  <div style={{ flex: 1, textAlign: 'left' }}>
-                    <div style={{
-                      fontSize: 15, fontWeight: 700,
-                      color: role === r.v ? r.color : '#333'
-                    }}>
+                  <span style={s.roleIcon}>{r.icon}</span>
+                  <div style={s.roleText}>
+                    <div
+                      style={{
+                        fontSize: 14,
+                        fontWeight: 700,
+                        color: role === r.v ? r.color : '#333'
+                      }}
+                    >
                       {r.title}
                     </div>
-                    <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>
-                      {r.sub}
-                    </div>
+                    <div style={s.roleSub}>{r.sub}</div>
                   </div>
                   {role === r.v && (
-                    <span style={{ fontSize: 18, color: r.color, fontWeight: 900 }}>✓</span>
+                    <span style={{ fontSize: 16, color: r.color, fontWeight: 900 }}>
+                      ✓
+                    </span>
                   )}
                 </button>
               ))}
@@ -126,6 +132,7 @@ export default function Login() {
               value={name}
               placeholder="उदा. राम पाटील"
               onChange={(e) => setName(e.target.value)}
+              autoComplete="name"
             />
 
             <button style={s.button} onClick={sendOTP} disabled={loading}>
@@ -147,10 +154,9 @@ export default function Login() {
               <b>{mobile}</b> वर OTP पाठवला
             </p>
 
-            {/* ⚠️ Dev mode मध्ये OTP दाखवा */}
             {devOtp && (
               <div style={s.devOtpBox}>
-                <div style={s.devOtpLabel}>🔧 Development Mode — OTP:</div>
+                <div style={s.devOtpLabel}>🔧 Development OTP:</div>
                 <div style={s.devOtpValue}>{devOtp}</div>
                 <button style={s.devOtpBtn} onClick={autoFillOTP}>
                   📋 आपोआप भरा
@@ -159,11 +165,20 @@ export default function Login() {
             )}
 
             <input
-              style={{ ...s.input, textAlign: 'center', fontSize: 24, letterSpacing: 8 }}
+              style={{
+                ...s.input,
+                textAlign: 'center',
+                fontSize: 24,
+                letterSpacing: 8,
+                fontWeight: 800,
+                marginTop: 12
+              }}
               value={otp}
               placeholder="______"
               maxLength={6}
+              inputMode="numeric"
               onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+              autoFocus
             />
 
             <button style={s.button} onClick={verify} disabled={loading}>
@@ -171,11 +186,18 @@ export default function Login() {
             </button>
 
             <div style={s.otpActions}>
-              <button style={s.link} onClick={() => { setStep(1); setOtp(''); setDevOtp(''); }}>
+              <button
+                style={s.link}
+                onClick={() => {
+                  setStep(1);
+                  setOtp('');
+                  setDevOtp('');
+                }}
+              >
                 ← मागे जा
               </button>
               <button style={s.link} onClick={sendOTP} disabled={loading}>
-                🔄 पुन्हा OTP पाठवा
+                🔄 पुन्हा पाठवा
               </button>
             </div>
           </>
@@ -188,121 +210,166 @@ export default function Login() {
 const s = {
   container: {
     minHeight: '100vh',
+    minHeight: '100dvh',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     background: 'linear-gradient(135deg, #e8f5e9 0%, #a5d6a7 100%)',
     fontFamily: "'Noto Sans Devanagari', sans-serif",
-    padding: 16,
+    padding: 'clamp(16px, 4vw, 20px)',
+    paddingTop: 'calc(clamp(16px, 4vw, 20px) + env(safe-area-inset-top))',
+    paddingBottom: 'calc(clamp(16px, 4vw, 20px) + env(safe-area-inset-bottom))',
     position: 'relative'
   },
   homeBtn: {
     position: 'absolute',
-    top: 20,
-    left: 20,
-    padding: '10px 18px',
+    top: 'calc(16px + env(safe-area-inset-top))',
+    left: 16,
+    padding: '10px 16px',
     borderRadius: 10,
     border: '2px solid #2e7d32',
     background: '#fff',
     color: '#2e7d32',
-    fontSize: 14,
+    fontSize: 'clamp(12px, 3.2vw, 14px)',
     fontWeight: 700,
     cursor: 'pointer',
-    fontFamily: 'inherit'
+    fontFamily: 'inherit',
+    minHeight: 42,
+    zIndex: 5
   },
   card: {
     background: '#fff',
-    padding: 32,
+    padding: 'clamp(22px, 5vw, 32px)',
     borderRadius: 20,
     boxShadow: '0 10px 40px rgba(46,125,50,0.15)',
     width: '100%',
-    maxWidth: 420,
+    maxWidth: 440,
     display: 'flex',
     flexDirection: 'column',
-    gap: 10
+    gap: 8
   },
-  header: { textAlign: 'center', marginBottom: 16 },
+  header: {
+    textAlign: 'center',
+    marginBottom: 16
+  },
   logoWrap: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 12
+    gap: 10
   },
-  logoIcon: { fontSize: 40 },
-  logo: { fontSize: 28, color: '#2e7d32', margin: 0, fontWeight: 900 },
-  tagline: { color: '#888', fontSize: 13, margin: '4px 0 0' },
-  label: { fontSize: 13, color: '#555', fontWeight: 600, marginTop: 8 },
+  logoIcon: {
+    fontSize: 'clamp(32px, 8vw, 40px)'
+  },
+  logo: {
+    fontSize: 'clamp(22px, 6vw, 28px)',
+    color: '#2e7d32',
+    margin: 0,
+    fontWeight: 900,
+    lineHeight: 1
+  },
+  tagline: {
+    color: '#888',
+    fontSize: 'clamp(11px, 3vw, 13px)',
+    margin: '4px 0 0'
+  },
+  label: {
+    fontSize: 'clamp(12px, 3.2vw, 13px)',
+    color: '#555',
+    fontWeight: 600,
+    marginTop: 8
+  },
   input: {
-    padding: 14,
-    borderRadius: 10,
+    padding: '14px 16px',
+    borderRadius: 12,
     border: '2px solid #e0e0e0',
     fontSize: 16,
     outline: 'none',
     boxSizing: 'border-box',
     width: '100%',
-    fontFamily: 'inherit'
+    fontFamily: 'inherit',
+    WebkitAppearance: 'none',
+    appearance: 'none'
   },
   roleRow: {
     display: 'flex',
     flexDirection: 'column',
-    gap: 10,
+    gap: 8,
     marginTop: 4
   },
   roleBtn: {
-    padding: '14px 16px',
+    padding: '12px 14px',
     borderRadius: 12,
     border: '2px solid #e0e0e0',
     background: '#fff',
     cursor: 'pointer',
-    fontSize: 15,
-    fontWeight: 600,
+    fontFamily: 'inherit',
     textAlign: 'left',
     display: 'flex',
     alignItems: 'center',
     gap: 12,
-    fontFamily: 'inherit',
-    transition: 'all 0.15s'
+    transition: 'all 0.15s',
+    minHeight: 56
   },
   roleBtnActive: {
-    padding: '14px 16px',
+    padding: '12px 14px',
     borderRadius: 12,
     border: '2px solid #2e7d32',
     background: '#e8f5e9',
     cursor: 'pointer',
-    fontSize: 15,
-    fontWeight: 800,
-    color: '#2e7d32',
+    fontFamily: 'inherit',
     textAlign: 'left',
     display: 'flex',
     alignItems: 'center',
     gap: 12,
-    fontFamily: 'inherit',
     boxShadow: '0 2px 8px rgba(46,125,50,0.15)',
-    transition: 'all 0.15s'
+    transition: 'all 0.15s',
+    minHeight: 56
+  },
+  roleIcon: {
+    fontSize: 'clamp(22px, 6vw, 26px)',
+    lineHeight: 1,
+    flexShrink: 0
+  },
+  roleText: {
+    flex: 1,
+    minWidth: 0
+  },
+  roleSub: {
+    fontSize: 'clamp(10px, 2.8vw, 12px)',
+    color: '#888',
+    marginTop: 2
   },
   button: {
-    padding: 14,
-    borderRadius: 10,
+    padding: 15,
+    borderRadius: 12,
     border: 'none',
-    background: '#2e7d32',
+    background: 'linear-gradient(135deg, #2e7d32, #43a047)',
     color: '#fff',
-    fontSize: 16,
-    fontWeight: 700,
+    fontSize: 'clamp(14px, 3.8vw, 16px)',
+    fontWeight: 800,
     cursor: 'pointer',
     marginTop: 12,
-    fontFamily: 'inherit'
+    fontFamily: 'inherit',
+    minHeight: 50,
+    boxShadow: '0 4px 16px rgba(46,125,50,0.25)'
   },
   link: {
     background: 'none',
     border: 'none',
     color: '#2e7d32',
     cursor: 'pointer',
-    fontSize: 14,
-    fontFamily: 'inherit'
+    fontSize: 'clamp(12px, 3.2vw, 14px)',
+    fontFamily: 'inherit',
+    fontWeight: 700,
+    padding: 4
   },
-  helper: { color: '#555', fontSize: 14, textAlign: 'center', margin: 0 },
-
-  // ⚠️ Dev OTP Box
+  helper: {
+    color: '#555',
+    fontSize: 'clamp(13px, 3.3vw, 14px)',
+    textAlign: 'center',
+    margin: 0
+  },
   devOtpBox: {
     background: '#fff8e1',
     border: '2px dashed #f57c00',
@@ -312,13 +379,13 @@ const s = {
     marginTop: 8
   },
   devOtpLabel: {
-    fontSize: 12,
+    fontSize: 'clamp(11px, 3vw, 12px)',
     color: '#e65100',
     fontWeight: 700,
     marginBottom: 6
   },
   devOtpValue: {
-    fontSize: 32,
+    fontSize: 'clamp(24px, 7vw, 32px)',
     fontWeight: 900,
     color: '#e65100',
     letterSpacing: 8,
@@ -331,21 +398,21 @@ const s = {
     border: 'none',
     background: '#f57c00',
     color: '#fff',
-    fontSize: 13,
+    fontSize: 'clamp(12px, 3.2vw, 13px)',
     fontWeight: 700,
     cursor: 'pointer',
-    fontFamily: 'inherit'
+    fontFamily: 'inherit',
+    minHeight: 40
   },
-
   otpActions: {
     display: 'flex',
     justifyContent: 'space-between',
-    marginTop: 8
+    marginTop: 8,
+    gap: 8
   },
-
   signupLink: {
     textAlign: 'center',
-    fontSize: 14,
+    fontSize: 'clamp(12px, 3.3vw, 14px)',
     color: '#666',
     marginTop: 18,
     paddingTop: 18,

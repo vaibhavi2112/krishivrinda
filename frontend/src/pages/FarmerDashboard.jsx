@@ -20,12 +20,8 @@ export default function FarmerDashboard() {
     nav('/');
   };
 
-  // Jarvis ला handlers register करा
   useEffect(() => {
-    registerHandlers({
-      goTo: setTab,
-      logout
-    });
+    registerHandlers({ goTo: setTab, logout });
     // eslint-disable-next-line
   }, []);
 
@@ -39,6 +35,15 @@ export default function FarmerDashboard() {
     if (tab === 'me') return <FarmerProfile onLogout={logout} />;
   };
 
+  const tabs = [
+    { id: 'home', icon: '🏠', label: 'घर' },
+    { id: 'crops', icon: '🌾', label: 'पिके' },
+    { id: 'market', icon: '💰', label: 'बाजार' },
+    { id: 'jobs', icon: '👷', label: 'कामगार' },
+    { id: 'notif', icon: '🔔', label: 'बातमी' },
+    { id: 'me', icon: '👤', label: 'मी' }
+  ];
+
   return (
     <div style={s.app}>
       <header style={s.header}>
@@ -51,55 +56,103 @@ export default function FarmerDashboard() {
       <main style={s.main}>{showTab()}</main>
 
       <nav style={s.nav}>
-        <NavBtn active={tab === 'home'} onClick={() => setTab('home')} icon="🏠" label="घर" />
-        <NavBtn active={tab === 'crops'} onClick={() => setTab('crops')} icon="🌾" label="पिके" />
-        <NavBtn active={tab === 'market'} onClick={() => setTab('market')} icon="💰" label="बाजार" />
-        <NavBtn active={tab === 'jobs'} onClick={() => setTab('jobs')} icon="👷" label="कामगार" />
-        <NavBtn active={tab === 'notif'} onClick={() => setTab('notif')} icon="🔔" label="बातमी" />
-        <NavBtn active={tab === 'me'} onClick={() => setTab('me')} icon="👤" label="मी" />
+        {tabs.map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            style={tab === t.id ? { ...s.navBtn, ...s.navBtnActive } : s.navBtn}
+            aria-label={t.label}
+          >
+            <span style={s.navIcon}>{t.icon}</span>
+            <span style={s.navLabel}>{t.label}</span>
+          </button>
+        ))}
       </nav>
     </div>
-  );
-}
-
-function NavBtn({ active, onClick, icon, label }) {
-  return (
-    <button onClick={onClick} style={active ? { ...s.navBtn, ...s.navBtnActive } : s.navBtn}>
-      <span style={{ fontSize: 18 }}>{icon}</span>
-      <span style={{ fontSize: 9, marginTop: 2, fontWeight: 600 }}>{label}</span>
-    </button>
   );
 }
 
 const s = {
   app: {
     minHeight: '100vh',
+    minHeight: '100dvh',
     background: '#f4f6f8',
     fontFamily: "'Noto Sans Devanagari', sans-serif",
-    display: 'flex', flexDirection: 'column',
-    paddingBottom: 76
+    display: 'flex',
+    flexDirection: 'column',
+    paddingBottom: 'calc(64px + env(safe-area-inset-bottom))'
   },
   header: {
     background: 'linear-gradient(135deg, #2e7d32 0%, #43a047 100%)',
-    color: '#fff', padding: '16px 20px',
-    position: 'sticky', top: 0, zIndex: 10,
+    color: '#fff',
+    padding: '14px 16px',
+    paddingTop: 'calc(14px + env(safe-area-inset-top))',
+    position: 'sticky',
+    top: 0,
+    zIndex: 10,
     boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
   },
-  headerTitle: { margin: 0, fontSize: 20, fontWeight: 800 },
-  headerSub: { margin: '2px 0 0', fontSize: 13, opacity: 0.9 },
-  main: { flex: 1, maxWidth: 600, width: '100%', margin: '0 auto' },
+  headerTitle: {
+    margin: 0,
+    fontSize: 'clamp(17px, 4.5vw, 20px)',
+    fontWeight: 800
+  },
+  headerSub: {
+    margin: '2px 0 0',
+    fontSize: 'clamp(11px, 3vw, 13px)',
+    opacity: 0.9
+  },
+  main: {
+    flex: 1,
+    maxWidth: 600,
+    width: '100%',
+    margin: '0 auto',
+    WebkitOverflowScrolling: 'touch'
+  },
   nav: {
-    position: 'fixed', bottom: 0, left: 0, right: 0,
-    background: '#fff', display: 'flex',
+    position: 'fixed',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    background: '#fff',
+    display: 'flex',
+    justifyContent: 'space-around',
+    alignItems: 'center',
     borderTop: '1px solid #e0e0e0',
     boxShadow: '0 -2px 12px rgba(0,0,0,0.08)',
-    maxWidth: 600, margin: '0 auto'
+    maxWidth: 600,
+    margin: '0 auto',
+    paddingBottom: 'env(safe-area-inset-bottom)',
+    zIndex: 100
   },
   navBtn: {
-    flex: 1, background: 'none', border: 'none',
-    padding: '8px 0', cursor: 'pointer',
-    display: 'flex', flexDirection: 'column', alignItems: 'center',
-    color: '#999', fontFamily: 'inherit'
+    flex: 1,
+    background: 'none',
+    border: 'none',
+    padding: '8px 2px',
+    minHeight: 56,
+    cursor: 'pointer',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: '#999',
+    fontFamily: 'inherit',
+    transition: 'color 0.15s',
+    gap: 2
   },
-  navBtnActive: { color: '#2e7d32', background: '#f1f8e9' }
+  navBtnActive: {
+    color: '#2e7d32',
+    background: '#f1f8e9'
+  },
+  navIcon: {
+    fontSize: 'clamp(17px, 5vw, 20px)',
+    lineHeight: 1
+  },
+  navLabel: {
+    fontSize: 'clamp(9px, 2.5vw, 11px)',
+    marginTop: 2,
+    fontWeight: 600,
+    lineHeight: 1
+  }
 };

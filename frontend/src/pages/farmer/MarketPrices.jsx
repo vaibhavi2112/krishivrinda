@@ -11,17 +11,22 @@ const CROPS = [
   { mr: 'ज्वारी', en: 'Jowar', group: '🌾 धान्य' },
   { mr: 'बाजरी', en: 'Bajra', group: '🌾 धान्य' },
   { mr: 'मका', en: 'Maize', group: '🌾 धान्य' },
+  { mr: 'रागी', en: 'Ragi', group: '🌾 धान्य' },
+  { mr: 'बार्ली', en: 'Barley', group: '🌾 धान्य' },
 
   { mr: 'तूर', en: 'Tur', group: '🫘 डाळी' },
   { mr: 'हरभरा', en: 'Chana', group: '🫘 डाळी' },
   { mr: 'मूग', en: 'Moong', group: '🫘 डाळी' },
   { mr: 'उडीद', en: 'Urad', group: '🫘 डाळी' },
   { mr: 'मसूर', en: 'Masoor', group: '🫘 डाळी' },
+  { mr: 'मटकी', en: 'Moth Beans', group: '🫘 डाळी' },
+  { mr: 'चवळी', en: 'Cowpea', group: '🫘 डाळी' },
 
   { mr: 'सोयाबीन', en: 'Soybean', group: '🌻 तेलबिया' },
   { mr: 'भुईमूग', en: 'Groundnut', group: '🌻 तेलबिया' },
   { mr: 'सूर्यफूल', en: 'Sunflower', group: '🌻 तेलबिया' },
   { mr: 'करडई', en: 'Safflower', group: '🌻 तेलबिया' },
+  { mr: 'तीळ', en: 'Sesame', group: '🌻 तेलबिया' },
 
   { mr: 'कापूस', en: 'Cotton', group: '🧵 पीक' },
   { mr: 'ऊस', en: 'Sugarcane', group: '🧵 पीक' },
@@ -41,6 +46,11 @@ const CROPS = [
   { mr: 'मेथी', en: 'Fenugreek', group: '🌶️ भाज्या' },
   { mr: 'कोथिंबीर', en: 'Coriander', group: '🌶️ भाज्या' },
   { mr: 'हिरवी मिरची', en: 'Green Chilli', group: '🌶️ भाज्या' },
+  { mr: 'लसूण', en: 'Garlic', group: '🌶️ भाज्या' },
+  { mr: 'गाजर', en: 'Carrot', group: '🌶️ भाज्या' },
+  { mr: 'वाटाणा', en: 'Peas', group: '🌶️ भाज्या' },
+  { mr: 'भोपळा', en: 'Pumpkin', group: '🌶️ भाज्या' },
+  { mr: 'रताळे', en: 'Sweet Potato', group: '🌶️ भाज्या' },
 
   { mr: 'द्राक्षे', en: 'Grapes', group: '🍎 फळे' },
   { mr: 'डाळिंब', en: 'Pomegranate', group: '🍎 फळे' },
@@ -48,10 +58,13 @@ const CROPS = [
   { mr: 'संत्री', en: 'Orange', group: '🍎 फळे' },
   { mr: 'आंबा', en: 'Mango', group: '🍎 फळे' },
   { mr: 'पेरू', en: 'Guava', group: '🍎 फळे' },
+  { mr: 'लिंबू', en: 'Lemon', group: '🍎 फळे' },
 
   { mr: 'हळद', en: 'Turmeric', group: '🌿 मसाले' },
   { mr: 'लाल मिरची', en: 'Red Chilli', group: '🌿 मसाले' },
-  { mr: 'धने', en: 'Coriander Seed', group: '🌿 मसाले' }
+  { mr: 'धने', en: 'Coriander Seed', group: '🌿 मसाले' },
+  { mr: 'जिरे', en: 'Cumin', group: '🌿 मसाले' },
+  { mr: 'मोहरी', en: 'Mustard', group: '🌿 मसाले' }
 ];
 
 const GROUPS = [...new Set(CROPS.map((c) => c.group))];
@@ -104,6 +117,12 @@ const DISTRICT_EN = {
   'पालघर': 'Palghar'
 };
 
+// Top 3 rank colors
+function getRankColor(index) {
+  const colors = ['#ffc107', '#c0c0c0', '#cd7f32'];
+  return colors[index] || '#9e9e9e';
+}
+
 export default function MarketPrices({ onBack }) {
   const { registerHandlers } = useJarvis();
   const [crop, setCrop] = useState('');
@@ -117,7 +136,37 @@ export default function MarketPrices({ onBack }) {
   const [distance, setDistance] = useState('');
   const [ratePerKm, setRatePerKm] = useState('20');
 
-  // Jarvis साठी — crop आपोआप set करा
+  // ============================================
+  // 🏆 Best Price Finder Calculations
+  // ============================================
+  const sortedByPrice = [...items].sort(
+    (a, b) => Number(b.modal_price) - Number(a.modal_price)
+  );
+
+  const bestMandi = sortedByPrice[0] || null;
+  const top3Mandi = sortedByPrice.slice(0, 3);
+
+  const avgPrice = items.length > 0
+    ? Math.round(
+        items.reduce((sum, m) => sum + Number(m.modal_price || 0), 0) / items.length
+      )
+    : 0;
+
+  const minPrice = items.length > 0
+    ? Math.min(...items.map((m) => Number(m.min_price) || Infinity))
+    : 0;
+
+  const maxPrice = items.length > 0
+    ? Math.max(...items.map((m) => Number(m.max_price) || 0))
+    : 0;
+
+  const bestPrice = bestMandi ? Number(bestMandi.modal_price) : 0;
+  const profitDiff = bestPrice - avgPrice;
+  const profitPercent = avgPrice > 0
+    ? ((profitDiff / avgPrice) * 100).toFixed(1)
+    : 0;
+
+  // Jarvis handlers
   useEffect(() => {
     registerHandlers({
       setCrop: (cropName) => {
@@ -237,53 +286,132 @@ export default function MarketPrices({ onBack }) {
       )}
 
       {items.length > 0 && (
-        <div style={s.summary}>
-          <span>✅ {cropMr} चे {items.length} मंडी दर</span>
-        </div>
+        <>
+          {/* 🏆 Best Price Summary */}
+          <div style={s.bestPriceCard}>
+            <div style={s.bestPriceHeader}>
+              <span style={s.bestPriceBadge}>🏆 सर्वात जास्त भाव</span>
+              <span style={s.bestPriceCrop}>{cropMr}</span>
+            </div>
+
+            {bestMandi && (
+              <div style={s.bestMandiBox}>
+                <div style={s.bestMandiName}>📍 {bestMandi.mandi_name}</div>
+                <div style={s.bestMandiDistrict}>{bestMandi.district}</div>
+                <div style={s.bestMandiPrice}>₹{bestMandi.modal_price}</div>
+                <div style={s.bestMandiLabel}>
+                  प्रति {bestMandi.variety ? `(${bestMandi.variety})` : 'क्विंटल'}
+                </div>
+              </div>
+            )}
+
+            {profitPercent > 0 && (
+              <div style={s.profitBox}>
+                <span style={s.profitIcon}>📈</span>
+                <span style={s.profitText}>
+                  सरासरीपेक्षा <b>+{profitPercent}%</b> जास्त नफा
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* 📊 Price Statistics */}
+          <div style={s.statsCard}>
+            <h3 style={s.statsTitle}>📊 भाव आकडेवारी</h3>
+            <div style={s.statsGrid}>
+              <div style={s.statItem}>
+                <div style={s.statIcon}>🏆</div>
+                <div style={s.statLabel}>सर्वात जास्त</div>
+                <div style={{ ...s.statValue, color: '#2e7d32' }}>₹{bestPrice}</div>
+              </div>
+              <div style={s.statItem}>
+                <div style={s.statIcon}>📊</div>
+                <div style={s.statLabel}>सरासरी</div>
+                <div style={{ ...s.statValue, color: '#1565c0' }}>₹{avgPrice}</div>
+              </div>
+              <div style={s.statItem}>
+                <div style={s.statIcon}>📉</div>
+                <div style={s.statLabel}>सर्वात कमी</div>
+                <div style={{ ...s.statValue, color: '#e65100' }}>₹{minPrice}</div>
+              </div>
+              <div style={s.statItem}>
+                <div style={s.statIcon}>🏪</div>
+                <div style={s.statLabel}>एकूण मंडी</div>
+                <div style={{ ...s.statValue, color: '#9c27b0' }}>{items.length}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* 🥇 Top 3 Mandis */}
+          {top3Mandi.length > 1 && (
+            <div style={s.topCard}>
+              <h3 style={s.topTitle}>🥇 टॉप 3 मंडी</h3>
+              {top3Mandi.map((m, i) => (
+                <div key={m.id || i} style={s.topRow}>
+                  <div style={{ ...s.topRank, background: getRankColor(i) }}>
+                    {i + 1}
+                  </div>
+                  <div style={s.topInfo}>
+                    <div style={s.topMandiName}>{m.mandi_name}</div>
+                    <div style={s.topDistrict}>{m.district}</div>
+                  </div>
+                  <div style={s.topPrice}>₹{m.modal_price}</div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* मंडीनिहाय भाव */}
+          <h3 style={s.sectionTitle}>📍 मंडीनिहाय भाव</h3>
+
+          {items.map((m) => (
+            <div key={m.id} style={s.card}>
+              <div style={s.cardTop}>
+                <h3 style={s.mandiName}>{m.mandi_name}</h3>
+                <span style={s.districtTag}>{m.district}</span>
+              </div>
+              <p style={s.cropName}>
+                {cropMr}
+                {m.variety && ` • ${m.variety}`}
+              </p>
+
+              <div style={s.priceRow}>
+                <div style={s.priceBox}>
+                  <span style={s.priceLabel}>किमान</span>
+                  <span style={s.priceVal}>₹{m.min_price}</span>
+                </div>
+                <div style={{ ...s.priceBox, background: '#e8f5e9' }}>
+                  <span style={s.priceLabel}>सरासरी</span>
+                  <span style={{ ...s.priceVal, color: '#2e7d32' }}>
+                    ₹{m.modal_price}
+                  </span>
+                </div>
+                <div style={s.priceBox}>
+                  <span style={s.priceLabel}>कमाल</span>
+                  <span style={s.priceVal}>₹{m.max_price}</span>
+                </div>
+              </div>
+
+              <p style={s.dateLine}>
+                📅 {new Date(m.price_date).toLocaleDateString('mr-IN')}
+                {m.arrival_quantity && ` • आवक: ${m.arrival_quantity} टन`}
+              </p>
+
+              <button
+                style={s.calcBtn}
+                onClick={() => {
+                  setCalc(null);
+                  calculate(m.modal_price);
+                }}
+              >
+                💰 नफा काढा
+              </button>
+            </div>
+          ))}
+        </>
       )}
 
-      {items.map((m) => (
-        <div key={m.id} style={s.card}>
-          <div style={s.cardTop}>
-            <h3 style={s.mandiName}>{m.mandi_name}</h3>
-            <span style={s.districtTag}>{m.district}</span>
-          </div>
-          <p style={s.cropName}>{cropMr}</p>
-
-          <div style={s.priceRow}>
-            <div style={s.priceBox}>
-              <span style={s.priceLabel}>किमान</span>
-              <span style={s.priceVal}>₹{m.min_price}</span>
-            </div>
-            <div style={{ ...s.priceBox, background: '#e8f5e9' }}>
-              <span style={s.priceLabel}>सरासरी</span>
-              <span style={{ ...s.priceVal, color: '#2e7d32' }}>
-                ₹{m.modal_price}
-              </span>
-            </div>
-            <div style={s.priceBox}>
-              <span style={s.priceLabel}>कमाल</span>
-              <span style={s.priceVal}>₹{m.max_price}</span>
-            </div>
-          </div>
-
-          <p style={s.dateLine}>
-            📅 {new Date(m.price_date).toLocaleDateString('mr-IN')}
-            {m.arrival_quantity && ` • आवक: ${m.arrival_quantity} टन`}
-          </p>
-
-          <button
-            style={s.calcBtn}
-            onClick={() => {
-              setCalc(null);
-              calculate(m.modal_price);
-            }}
-          >
-            💰 नफा काढा
-          </button>
-        </div>
-      ))}
-
+      {/* नफा हिशोब */}
       {items.length > 0 && (
         <div style={s.calcCard}>
           <h3 style={s.calcTitle}>💰 नफा हिशोब</h3>
@@ -383,12 +511,188 @@ const s = {
   },
   emptyIcon: { fontSize: 60, marginBottom: 8 },
   emptyHint: { fontSize: 13, color: '#aaa', marginTop: 8 },
-  summary: {
-    background: '#e8f5e9', color: '#2e7d32',
-    padding: 12, borderRadius: 10, fontSize: 14,
-    fontWeight: 700, textAlign: 'center',
-    border: '1px solid #a5d6a7'
+
+  sectionTitle: { margin: '8px 0 0', fontSize: 15, color: '#333' },
+
+  /* 🏆 Best Price Card */
+  bestPriceCard: {
+    background: 'linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%)',
+    borderRadius: 16,
+    padding: 18,
+    border: '2px solid #ffc107',
+    boxShadow: '0 4px 16px rgba(255,193,7,0.2)',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 12
   },
+  bestPriceHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 8
+  },
+  bestPriceBadge: {
+    background: '#ffc107',
+    color: '#fff',
+    padding: '6px 14px',
+    borderRadius: 20,
+    fontSize: 12,
+    fontWeight: 800,
+    letterSpacing: 0.5
+  },
+  bestPriceCrop: {
+    fontSize: 16,
+    fontWeight: 800,
+    color: '#ef6c00'
+  },
+  bestMandiBox: {
+    background: '#fff',
+    borderRadius: 12,
+    padding: 14,
+    textAlign: 'center',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+  },
+  bestMandiName: {
+    fontSize: 16,
+    fontWeight: 800,
+    color: '#1b5e20'
+  },
+  bestMandiDistrict: {
+    fontSize: 12,
+    color: '#888',
+    marginTop: 2
+  },
+  bestMandiPrice: {
+    fontSize: 36,
+    fontWeight: 900,
+    color: '#2e7d32',
+    lineHeight: 1.1,
+    marginTop: 8
+  },
+  bestMandiLabel: {
+    fontSize: 11,
+    color: '#666',
+    marginTop: 2
+  },
+  profitBox: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    background: '#e8f5e9',
+    padding: 10,
+    borderRadius: 10
+  },
+  profitIcon: {
+    fontSize: 20
+  },
+  profitText: {
+    fontSize: 13,
+    color: '#1b5e20',
+    fontWeight: 600
+  },
+
+  /* 📊 Stats Card */
+  statsCard: {
+    background: '#fff',
+    borderRadius: 14,
+    padding: 16,
+    boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+  },
+  statsTitle: {
+    margin: '0 0 12px',
+    fontSize: 15,
+    color: '#1b5e20',
+    fontWeight: 800
+  },
+  statsGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(4, 1fr)',
+    gap: 8
+  },
+  statItem: {
+    background: '#f8f9fa',
+    borderRadius: 10,
+    padding: 10,
+    textAlign: 'center'
+  },
+  statIcon: {
+    fontSize: 20,
+    marginBottom: 4
+  },
+  statLabel: {
+    fontSize: 10,
+    color: '#888',
+    marginBottom: 4,
+    fontWeight: 600
+  },
+  statValue: {
+    fontSize: 15,
+    fontWeight: 900,
+    lineHeight: 1
+  },
+
+  /* 🥇 Top 3 Card */
+  topCard: {
+    background: '#fff',
+    borderRadius: 14,
+    padding: 16,
+    boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 10
+  },
+  topTitle: {
+    margin: '0 0 4px',
+    fontSize: 15,
+    color: '#1b5e20',
+    fontWeight: 800
+  },
+  topRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 12,
+    padding: '10px 0',
+    borderBottom: '1px solid #f0f0f0'
+  },
+  topRank: {
+    width: 32,
+    height: 32,
+    borderRadius: '50%',
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 900,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0
+  },
+  topInfo: {
+    flex: 1,
+    minWidth: 0
+  },
+  topMandiName: {
+    fontSize: 14,
+    fontWeight: 800,
+    color: '#333',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis'
+  },
+  topDistrict: {
+    fontSize: 11,
+    color: '#888',
+    marginTop: 2
+  },
+  topPrice: {
+    fontSize: 16,
+    fontWeight: 900,
+    color: '#2e7d32',
+    flexShrink: 0
+  },
+
+  /* मंडी Cards */
   card: {
     background: '#fff', borderRadius: 14, padding: 16,
     boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
@@ -416,6 +720,8 @@ const s = {
     background: '#fff', color: '#2e7d32',
     fontSize: 14, fontWeight: 700, cursor: 'pointer', marginTop: 6
   },
+
+  /* नफा हिशोब */
   calcCard: {
     background: '#fff8e1', borderRadius: 14, padding: 16,
     border: '1px solid #ffe082',

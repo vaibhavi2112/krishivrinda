@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import API from '../api';
+import { useGeolocation } from '../hooks/useGeolocation';
 
 export default function Register() {
   const nav = useNavigate();
+  const { loading: geoLoading, getLocation } = useGeolocation();
   const [step, setStep] = useState(1);
   const [form, setForm] = useState({
     role: 'farmer',
@@ -17,9 +19,48 @@ export default function Register() {
   const [otp, setOtp] = useState('');
   const [devOtp, setDevOtp] = useState('');
   const [loading, setLoading] = useState(false);
+  const [locationCaptured, setLocationCaptured] = useState(false);
 
   const set = (k, v) => setForm({ ...form, [k]: v });
 
+  // ============================================
+  // 📍 Auto Location Capture
+  // ============================================
+  const handleGetLocation = async () => {
+    const result = await getLocation();
+
+    if (result && result.success) {
+      setForm((prev) => ({
+        ...prev,
+        district: result.district || prev.district,
+        taluka: result.taluka || prev.taluka,
+        village: result.village || prev.village,
+        pincode: result.pincode || prev.pincode
+      }));
+
+      // GPS coordinates temporarily save
+      localStorage.setItem(
+        'kv_temp_location',
+        JSON.stringify({
+          latitude: result.latitude,
+          longitude: result.longitude
+        })
+      );
+
+      setLocationCaptured(true);
+      alert(
+        `✅ स्थान मिळाले!\n${result.district || ''}${
+          result.taluka ? ' • ' + result.taluka : ''
+        }`
+      );
+    } else {
+      alert('❌ स्थान मिळवता आले नाही. कृपया manually भरा.');
+    }
+  };
+
+  // ============================================
+  // Send OTP
+  // ============================================
   const sendOTP = async () => {
     if (!/^\+91[6-9]\d{9}$/.test(form.mobile)) {
       alert('वैध मोबाइल नंबर द्या (+91XXXXXXXXXX)');
@@ -42,6 +83,9 @@ export default function Register() {
     }
   };
 
+  // ============================================
+  // Verify OTP & Create Account
+  // ============================================
   const verify = async () => {
     if (otp.length !== 6) {
       alert('6-अंकी OTP द्या');
@@ -64,6 +108,19 @@ export default function Register() {
         village: form.village || '',
         pincode: form.pincode || ''
       };
+
+      // 📍 Add latitude/longitude if captured
+      const storedLocation = localStorage.getItem('kv_temp_location');
+      if (storedLocation) {
+        try {
+          const loc = JSON.parse(storedLocation);
+          if (loc.latitude) extras.latitude = loc.latitude;
+          if (loc.longitude) extras.longitude = loc.longitude;
+          localStorage.removeItem('kv_temp_location');
+        } catch (e) {
+          console.error('Location parse error:', e);
+        }
+      }
 
       const fullUser = { ...data.user, ...extras };
       localStorage.setItem('kv_user', JSON.stringify(fullUser));
@@ -220,6 +277,28 @@ export default function Register() {
                 <div style={s.divider}>
                   <span style={s.dividerText}>📍 पत्ता (पर्यायी)</span>
                 </div>
+
+                {/* 📍 Auto Location Button */}
+                <button
+                  type="button"
+                  style={
+                    locationCaptured
+                      ? { ...s.locationBtn, ...s.locationBtnActive }
+                      : s.locationBtn
+                  }
+                  onClick={handleGetLocation}
+                  disabled={geoLoading}
+                >
+                  {geoLoading
+                    ? '⏳ स्थान शोधत आहे...'
+                    : locationCaptured
+                    ? '✅ स्थान मिळाले (पुन्हा घ्या)'
+                    : '📍 माझे स्थान घ्या'}
+                </button>
+
+                <p style={s.locationHint}>
+                  💡 एका क्लिकवर जिल्हा, तालुका, गाव आपोआप भरले जाईल
+                </p>
 
                 <label style={s.label}>जिल्हा</label>
                 <select
@@ -419,7 +498,6 @@ const s = {
     alignItems: 'start'
   },
 
-  /* LEFT PANEL */
   leftPanel: {
     paddingTop: 'clamp(0px, 2vw, 20px)'
   },
@@ -518,7 +596,6 @@ const s = {
     marginTop: 2
   },
 
-  /* FORM PANEL */
   formPanel: {},
   formCard: {
     background: '#fff',
@@ -710,6 +787,40 @@ const s = {
     fontSize: 'clamp(12px, 3.2vw, 13px)',
     color: '#888',
     fontWeight: 700
+  },
+
+  locationBtn: {
+    width: '100%',
+    padding: '12px 16px',
+    borderRadius: 12,
+    border: '2px dashed #2e7d32',
+    background: '#f1f8e9',
+    color: '#2e7d32',
+    fontSize: 'clamp(14px, 3.5vw, 15px)',
+    fontWeight: 700,
+    cursor: 'pointer',
+    fontFamily: 'inherit',
+    marginTop: 6,
+    marginBottom: 6,
+    minHeight: 48,
+    transition: 'all 0.15s',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8
+  },
+  locationBtnActive: {
+    background: '#e8f5e9',
+    borderStyle: 'solid',
+    color: '#1b5e20'
+  },
+  locationHint: {
+    fontSize: 'clamp(10px, 2.8vw, 12px)',
+    color: '#666',
+    textAlign: 'center',
+    margin: '0 0 8px',
+    fontStyle: 'italic',
+    lineHeight: 1.5
   },
 
   submitBtn: {
